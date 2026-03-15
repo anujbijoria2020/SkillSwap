@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+  output = "../src/generated/prisma-client"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SwapStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  bio       String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  skillsOffered   SkillOffered[]
+  skillsWanted    SkillWanted[]
+  swapsInitiated  Swap[]         @relation("Initiator")
+  swapsReceived   Swap[]         @relation("Receiver")
+  sessions        Session[]
+  messagesSent    Message[]      @relation("Sender")
+  reviewsGiven    Review[]       @relation("Reviewer")
+  reviewsReceived Review[]       @relation("Reviewee")
+}
+
+model SkillOffered {
+  id     String @id @default(uuid())
+  name   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SkillWanted {
+  id     String @id @default(uuid())
+  name   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model Swap {
+  id           String     @id @default(uuid())
+  initiatorId  String
+  receiverId   String
+  skillOffered String
+  skillWanted  String
+  status       SwapStatus @default(PENDING)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  initiator User      @relation("Initiator", fields: [initiatorId], references: [id])
+  receiver  User      @relation("Receiver", fields: [receiverId], references: [id])
+  sessions  Session[]
+  messages  Message[]
+}
+
+model Session {
+  id          String        @id @default(uuid())
+  swapId      String
+  userId      String
+  scheduledAt DateTime
+  meetLink    String?
+  status      SessionStatus @default(SCHEDULED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  swap Swap @relation(fields: [swapId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  swapId    String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  swap   Swap @relation(fields: [swapId], references: [id])
+  sender User @relation("Sender", fields: [senderId], references: [id])
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  reviewerId String
+  revieweeId String
+  swapId     String   @unique
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  reviewer User @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewee User @relation("Reviewee", fields: [revieweeId], references: [id])
+}
