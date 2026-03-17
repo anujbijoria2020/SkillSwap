@@ -38,7 +38,7 @@ export const sendSwapRequestController = async (req: Request, res: Response, nex
 export const respondToSwapController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.userId!
-    const swapId = req.params.id as string
+    const swapId = req.params.swapid as string
     const { accept } = req.body as RespondSwapInput
     const result = await respondToSwap(userId, swapId, accept)
     res.status(200).json({
@@ -74,7 +74,7 @@ export const getOutgoingSwapsController = async (req: Request, res: Response, ne
 export const getSwapByIdController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.userId!
-    const swapId = req.params.id as string
+    const swapId = req.params.swapid as string
     const result = await getSwapById(userId, swapId)
     res.status(200).json({ success: true, data: result })
   } catch (error) {
@@ -85,7 +85,7 @@ export const getSwapByIdController = async (req: Request, res: Response, next: N
 export const cancelSwapController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.userId!
-    const swapId = req.params.id as string
+    const swapId = req.params.swapid as string
     const result = await cancelSwap(userId, swapId)
     res.status(200).json({
       success: true,
