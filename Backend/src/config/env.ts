@@ -3,8 +3,10 @@ dotenv.config()
 
 const requiredEnvVars = [
   'DATABASE_URL',
-  'JWT_SECRET',
-  'JWT_EXPIRES_IN',
+  'JWT_ACCESS_SECRET',
+  'JWT_REFRESH_SECRET',
+  'JWT_ACCESS_TOKEN_EXPIRES_IN',
+  'JWT_REFRESH_TOKEN_EXPIRES_IN',
   'PORT',
   'NODE_ENV',
 ] as const
@@ -17,8 +19,10 @@ for (const key of requiredEnvVars) {
 
 export const env = {
   DATABASE_URL: process.env.DATABASE_URL!,
-  JWT_SECRET: process.env.JWT_SECRET!,
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN!,
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET!,
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET!,
   PORT: parseInt(process.env.PORT!, 10),
   NODE_ENV: process.env.NODE_ENV! as 'development' | 'production' | 'test',
+  JWT_ACCESS_TOKEN_EXPIRES_IN:process.env.JWT_ACCESS_TOKEN_EXPIRES_IN!,
+  JWT_REFRESH_TOKEN_EXPIRES_IN:process.env.JWT_REFRESH_TOKEN_EXPIRES_IN!,
 }

@@ -34,12 +34,13 @@ model User {
 
   skillsOffered   SkillOffered[]
   skillsWanted    SkillWanted[]
-  swapsInitiated  Swap[]         @relation("Initiator")
-  swapsReceived   Swap[]         @relation("Receiver")
+initiatedSwaps Swap[] @relation("Initiator")
+receivedSwaps  Swap[] @relation("Receiver")
   sessions        Session[]
   messagesSent    Message[]      @relation("Sender")
   reviewsGiven    Review[]       @relation("Reviewer")
   reviewsReceived Review[]       @relation("Reviewee")
+  refreshTokens RefreshToken[]
 }
 
 model SkillOffered {
@@ -107,4 +108,14 @@ model Review {
 
   reviewer User @relation("Reviewer", fields: [reviewerId], references: [id])
   reviewee User @relation("Reviewee", fields: [revieweeId], references: [id])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
 }
