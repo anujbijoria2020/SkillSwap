@@ -119,7 +119,6 @@ export const updateSession = async (userId: string, sessionId: string, data: Upd
   data: {
     ...(data.scheduledAt && { scheduledAt: new Date(data.scheduledAt) }),
     ...(data.meetLink && { meetLink: data.meetLink }),
-    ...(data.status && { status: data.status })
   }
 })
     return updatedSession
