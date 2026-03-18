@@ -18,7 +18,7 @@ const swapRouter = Router()
 swapRouter.get("/browse", authMiddleware, browseUsersController)
 swapRouter.get("/incoming", authMiddleware, getIncomingSwapsController)
 swapRouter.get("/outgoing", authMiddleware, getOutgoingSwapsController)
-swapRouter.post("/createSwap", authMiddleware, validate(createSwapSchema), sendSwapRequestController)
+swapRouter.post("/createswap", authMiddleware, validate(createSwapSchema), sendSwapRequestController)
 
 // dynamic routes last
 swapRouter.put("/:swapid/respond", authMiddleware, validate(respondSwapSchema), respondToSwapController)

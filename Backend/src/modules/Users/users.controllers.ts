@@ -93,7 +93,7 @@ export const addSkillsWantedController = async(req:Request,res:Response,next:Nex
     } catch (error) {
         next(error)
     }   
-    }
+}
 
 export const removeSkillsOfferedController = async(req:Request,res:Response,next:NextFunction)=>{
     try{

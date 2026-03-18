@@ -76,17 +76,33 @@ export const browseUsers = async (userId: string) => {
 }
 
 export const sendSwapRequest = async (initiatorId: string, data: CreateSwapInput) => {
-  const { receiverId, skillOffered, skillWanted } = data
+  const { receiverId } = data
 
   if (initiatorId === receiverId) {
     throw new ApiError(400, "Cannot send swap request to yourself")
   }
 
-  const receiver = await prisma.user.findUnique({ where: { id: receiverId } })
-  if (!receiver) {
-    throw new ApiError(404, "User not found")
+  const receiver = await prisma.user.findUnique({
+    where: { id: receiverId },
+    include: { skillsOffered: true, skillsWanted: true }
+  })
+  if (!receiver) throw new ApiError(404, "User not found")
+
+  // get initiator's skills
+  const initiator = await prisma.user.findUnique({
+    where: { id: initiatorId },
+    include: { skillsOffered: true, skillsWanted: true }
+  })
+
+  // check both have skills
+  if (!initiator?.skillsOffered.length) {
+    throw new ApiError(400, "Add skills to your profile first")
+  }
+  if (!receiver.skillsOffered.length) {
+    throw new ApiError(400, "This user has no skills to offer")
   }
 
+  // check existing swap
   const existingSwap = await prisma.swap.findFirst({
     where: {
       OR: [
@@ -95,9 +111,11 @@ export const sendSwapRequest = async (initiatorId: string, data: CreateSwapInput
       ]
     }
   })
-  if (existingSwap) {
-    throw new ApiError(409, "Swap request already exists")
-  }
+  if (existingSwap) throw new ApiError(409, "Swap request already exists")
+
+  // use profile skills automatically
+  const skillOffered = initiator.skillsOffered.map(s => s.name).join(", ")
+  const skillWanted = initiator.skillsWanted.map(s => s.name).join(", ")
 
   const swap = await prisma.swap.create({
     data: { initiatorId, receiverId, skillOffered, skillWanted }
@@ -125,7 +143,17 @@ export const getIncomingSwaps = async (userId: string) => {
     where: { receiverId: userId },
     include: {
       initiator: {
-        include: { skillsOffered: true, skillsWanted: true }
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bio: true,
+          avatarUrl: true,
+          createdAt: true,
+          updatedAt: true,
+          skillsOffered: true,
+          skillsWanted: true
+        }
       }
     }
   })
@@ -136,7 +164,17 @@ export const getOutgoingSwaps = async (userId: string) => {
     where: { initiatorId: userId },
     include: {
       receiver: {
-        include: { skillsOffered: true, skillsWanted: true }
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bio: true,
+          avatarUrl: true,
+          createdAt: true,
+          updatedAt: true,
+          skillsOffered: true,
+          skillsWanted: true
+        }
       }
     }
   })
