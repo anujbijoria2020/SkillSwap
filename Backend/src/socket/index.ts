@@ -1,0 +1,77 @@
+
+
+import { Server } from 'socket.io'
+import { Server as HttpServer } from 'http'
+import { verifyAccessToken } from '../utils/jwt'
+import { prisma } from '../config/prisma'
+
+export const initSocket = (httpServer: HttpServer) => {
+  const io = new Server(httpServer, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST']
+    }
+  })
+
+  // auth middleware for socket
+  io.use((socket, next) => {
+    const token = socket.handshake.auth.token
+    if (!token) return next(new Error('Authentication error'))
+    try {
+      const payload = verifyAccessToken(token)
+      socket.data.userId = payload.userId
+      next()
+    } catch {
+      next(new Error('Authentication error'))
+    }
+  })
+
+  io.on('connection', (socket) => {
+    console.log(`User connected: ${socket.data.userId}`)
+
+    // join a swap room
+    socket.on('join_swap', (swapId: string) => {
+      socket.join(swapId)
+      console.log(`User ${socket.data.userId} joined swap ${swapId}`)
+    })
+
+    // leave a swap room
+    socket.on('leave_swap', (swapId: string) => {
+      socket.leave(swapId)
+    })
+
+    // send message
+    socket.on('send_message', async (data: { swapId: string, content: string }) => {
+      try {
+        const { swapId, content } = data
+        const senderId = socket.data.userId
+
+        // save to DB
+        const swap = await prisma.swap.findUnique({ where: { id: swapId } })
+        if (!swap) return
+        if (swap.initiatorId !== senderId && swap.receiverId !== senderId) return
+
+        const receiverId = senderId === swap.initiatorId ? swap.receiverId : swap.initiatorId
+
+        const message = await prisma.message.create({
+          data: { swapId, senderId, receiverId, content },
+          include: {
+            sender: { select: { id: true, name: true, avatarUrl: true } }
+          }
+        })
+
+        // emit to everyone in the swap room including sender
+        io.to(swapId).emit('new_message', message)
+
+      } catch (error) {
+        socket.emit('error', { message: 'Failed to send message' })
+      }
+    })
+
+    socket.on('disconnect', () => {
+      console.log(`User disconnected: ${socket.data.userId}`)
+    })
+  })
+
+  return io
+}

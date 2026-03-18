@@ -47,27 +47,6 @@ export const getMessages = async (userId: string, swapId: string) => {
   })
 }
 
-// send a message
-export const sendMessage = async (senderId: string, swapId: string, content: string) => {
-  const swap = await prisma.swap.findUnique({ where: { id: swapId } })
-  if (!swap) throw new ApiError(404, 'Swap not found')
-  if (swap.status !== 'ACCEPTED') throw new ApiError(400, 'Swap must be accepted to send messages')
-  if (senderId !== swap.initiatorId && senderId !== swap.receiverId) {
-    throw new ApiError(403, 'Not authorized')
-  }
-
-  const receiverId = senderId === swap.initiatorId ? swap.receiverId : swap.initiatorId
-
-  const message = await prisma.message.create({
-    data: { swapId, senderId, receiverId, content },
-    include: {
-      sender: { select: { id: true, name: true, avatarUrl: true } }
-    }
-  })
-
-  return message
-}
-
 // delete a message (only sender can delete)
 export const deleteMessage = async (userId: string, messageId: string) => {
   const message = await prisma.message.findUnique({ where: { id: messageId } })

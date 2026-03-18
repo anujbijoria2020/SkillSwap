@@ -37,7 +37,6 @@
 import ApiError from "../../utils/ApiError"
 import { prisma } from "../../config/prisma"
 import { CreateSessionInput, UpdateSessionInput } from "./sessions.validation"
-import { updateUserInput } from "../Users/user.validation"
 
 export const createSession = async (userId: string, data: CreateSessionInput) => {
      const swap = await prisma.swap.findUnique({
@@ -113,13 +112,15 @@ export const updateSession = async (userId: string, sessionId: string, data: Upd
     if(session.userId !== userId){
         throw new ApiError(403, 'Not authorized')
     }
+    if(session.status !== 'SCHEDULED'){
+        throw new ApiError(400, 'Cannot update completed or cancelled session')
+    }
 
  const updatedSession = await prisma.session.update({
   where: { id: sessionId },
   data: {
     ...(data.scheduledAt && { scheduledAt: new Date(data.scheduledAt) }),
-    ...(data.meetLink && { meetLink: data.meetLink }),
-    ...(data.status && { status: data.status })
+    ...(data.meetLink && { meetLink: data.meetLink })
   }
 })
     return updatedSession
