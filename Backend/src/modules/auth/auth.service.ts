@@ -7,7 +7,6 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../../utils/jwt";
-import { env } from "../../config/env";
 
 export const register = async (input: RegisterInput) => {
   const { name, email, password } = input;
