@@ -8,3 +8,14 @@ dist/
 .env
 
 node_modules/
+
+logs/
+*.log
+
+# Postman
+.postman/environments/
+.postman/globals/
+.postman/flows/
+.postman/specs/
+
+test-socket.html

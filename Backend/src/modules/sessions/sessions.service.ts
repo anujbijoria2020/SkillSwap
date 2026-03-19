@@ -37,6 +37,7 @@
 import ApiError from "../../utils/ApiError"
 import { prisma } from "../../config/prisma"
 import { CreateSessionInput, UpdateSessionInput } from "./sessions.validation"
+import { logger } from "../../config/logger"
 
 export const createSession = async (userId: string, data: CreateSessionInput) => {
      const swap = await prisma.swap.findUnique({
@@ -63,6 +64,7 @@ export const createSession = async (userId: string, data: CreateSessionInput) =>
             meetLink: data.meetLink
         }
     })
+    logger.info(`Session created: ${session.id} for swap ${data.swapId} by user ${userId}`);
     return session
 }
 
@@ -78,6 +80,7 @@ export const getMySessions = async (userId: string) => {
             }
         }
     })
+    logger.info(`Retrieving sessions for user: ${userId}`);
     return sessions
 }
 
@@ -99,6 +102,7 @@ export const getSessionById = async (userId: string, sessionId: string) => {
     if(session.userId !== userId){
         throw new ApiError(403, 'Not authorized')
     }
+    logger.info(`Retrieving session: ${session.id} for user: ${userId}`);
     return session
 }
 
@@ -123,6 +127,7 @@ export const updateSession = async (userId: string, sessionId: string, data: Upd
     ...(data.meetLink && { meetLink: data.meetLink }),
   }
 })
+    logger.info(`Session updated: ${updatedSession.id} for user: ${userId}`);
     return updatedSession
 }
 
@@ -140,6 +145,7 @@ export const completeSession = async (userId: string, sessionId: string) => {
         where: { id: sessionId },
         data: { status: 'COMPLETED' }
     })
+    logger.info(`Session completed: ${updatedSession.id} for user: ${userId}`);
     return updatedSession
 }
 
@@ -160,6 +166,7 @@ export const cancelSession = async (userId: string, sessionId: string) => {
         where: { id: sessionId },
         data: { status: 'CANCELLED' }
     })
+    logger.info(`Session cancelled: ${updatedSession.id} for user: ${userId}`);
     return updatedSession
 }
 

@@ -7,11 +7,13 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../../utils/jwt";
+import { logger } from "../../config/logger";
 
 export const register = async (input: RegisterInput) => {
   const { name, email, password } = input;
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
+    logger.warn(`Registration attempt with existing email: ${email}`)
     throw new ApiError(409, "User already exists");
   }
   const hashedPassword = await hashPassword(password);
@@ -44,6 +46,8 @@ export const register = async (input: RegisterInput) => {
     },
   });
 
+  logger.info(`New user registered: ${user.email} (ID: ${user.id})`)
+ logger.info(`Access token generated for user ${user.email}: ${accessToken}`)
   return { user: userWithoutPassword, accessToken, refreshToken };
 };
 
@@ -51,10 +55,12 @@ export const login = async (input: LoginInput) => {
   const { email, password } = input;
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
+    logger.warn(`Login attempt with non-existent email: ${email}`)
     throw new ApiError(401, "User not found");
   }
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) {
+    logger.warn(`Login attempt with invalid credentials for email: ${email}`)
     throw new ApiError(401, "Invalid credentials");
   }
   const accessToken = generateAccessToken({
@@ -77,6 +83,7 @@ export const login = async (input: LoginInput) => {
   });
 
   const { password: _, ...userWithoutPassword } = user;
+  logger.info(`Access token generated for user ${user.email}: ${accessToken}`);
   return { user: userWithoutPassword, accessToken, refreshToken };
 };
 
@@ -115,6 +122,7 @@ export const refresh = async (refreshToken: string) => {
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
   });
+  logger.info(`Refresh token generated for user ${payload.email}: ${newRefreshToken}`);
   return { accessToken, refreshToken: newRefreshToken };
 };
 
@@ -127,6 +135,7 @@ export const logout = async (refreshToken: string) => {
     const isValid = await comparePassword(refreshToken, token.token);
     if (isValid) {
       await prisma.refreshToken.delete({ where: { id: token.id } });
+      logger.info(`Refresh token deleted for user ${payload.email}`);
       return;
     }
   }

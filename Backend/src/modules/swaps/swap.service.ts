@@ -39,6 +39,7 @@
 // 4. update status to CANCELLED
 // 5. return updated swap
 
+import { logger } from "../../config/logger"
 import { prisma } from "../../config/prisma"
 import ApiError from "../../utils/ApiError"
 import { CreateSwapInput } from "./swap.validation"
@@ -71,6 +72,7 @@ export const browseUsers = async (userId: string) => {
       skillsWanted: true
     }
   })
+  logger.info(`User ${userId} browsed users, found ${users.length} results`);
 
   return users.map(({ password, ...rest }) => rest)
 }
@@ -120,6 +122,7 @@ export const sendSwapRequest = async (initiatorId: string, data: CreateSwapInput
   const swap = await prisma.swap.create({
     data: { initiatorId, receiverId, skillOffered, skillWanted }
   })
+  logger.info(`Swap request created: ${swap.id} from user ${initiatorId} to user ${receiverId}`);
 
   return swap
 }
@@ -134,6 +137,7 @@ export const respondToSwap = async (userId: string, swapId: string, accept: bool
     where: { id: swapId },
     data: { status: accept ? "ACCEPTED" : "REJECTED" }
   })
+  logger.info(`Swap ${accept ? "accepted" : "rejected"}: ${swapId} by user ${userId}`);
 
   return updated
 }
@@ -202,6 +206,7 @@ export const cancelSwap = async (userId: string, swapId: string) => {
   if (!swap) throw new ApiError(404, "Swap not found")
   if (swap.initiatorId !== userId) throw new ApiError(403, "Not authorized")
   if (swap.status !== "PENDING") throw new ApiError(400, "Can only cancel pending swaps")
+  logger.info(`Swap cancelled: ${swapId} by user ${userId}`);
 
   return prisma.swap.update({
     where: { id: swapId },

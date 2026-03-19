@@ -12,6 +12,8 @@ import reviewRouter from './modules/reviews/reviews.routes'
 import messageRouter from './modules/messages/messages.routes'
 import { errorMiddleware } from './middleware/error.middleware'
 import cookieParser from 'cookie-parser'
+import { authLimiter, generalLimiter } from './middleware/rateLimit.middleware'
+import { logger } from './config/logger'
 
 const app = express()
 const httpServer = createServer(app)  // wrap express in http server
@@ -23,10 +25,15 @@ app.use(helmet())
 app.use(cors())
 app.use(cookieParser())
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(generalLimiter)
+
 
 app.get('/', (_, res) => res.send('SkillSwapNetwork API running'))
 
-app.use('/api/auth', authRouter)
+
+
+app.use('/api/auth',authLimiter, authRouter)
 app.use('/api/users', userRouter)
 app.use('/api/swaps', swapRouter)
 app.use('/api/sessions', sessionRouter)
@@ -36,7 +43,7 @@ app.use(errorMiddleware)
 
 // use httpServer instead of app.listen
 httpServer.listen(env.PORT, () => {
-  console.log(`Server running on port ${env.PORT} in ${env.NODE_ENV} mode`)
+  logger.info(`Server running on port ${env.PORT} in ${env.NODE_ENV} mode`)
 })
 
 export default app

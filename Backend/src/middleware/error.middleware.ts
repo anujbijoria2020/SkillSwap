@@ -1,8 +1,9 @@
+import { logger } from "../config/logger";
 import ApiError from "../utils/ApiError";
 import {Request, Response, NextFunction} from "express";
 
 export const errorMiddleware = (err: ApiError, req: Request, res: Response, next: NextFunction) => {
-    console.error(err);
+    logger.error(`Error: ${err.message}`, { stack: err.stack })
     if (err instanceof ApiError) {
         res.status(err.statusCode).json({
             success: false,
