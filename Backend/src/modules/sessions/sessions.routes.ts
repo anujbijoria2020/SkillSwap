@@ -11,7 +11,7 @@ sessionRouter.post("/",authMiddleware, validate(createSessionSchema),createSessi
 sessionRouter.get("/", authMiddleware, getMySessionsController);
 sessionRouter.get("/:sessionid", authMiddleware, getSessionByIdController);
 sessionRouter.put("/:sessionid", authMiddleware,validate(updateSessionSchema), updateSessionController);
-sessionRouter.post("/:sessionid/complete", authMiddleware, completeSessionController);
-sessionRouter.post("/:sessionid/cancel", authMiddleware, cancelSessionController);
+sessionRouter.patch("/:sessionid/complete", authMiddleware, completeSessionController);
+sessionRouter.patch("/:sessionid/cancel", authMiddleware, cancelSessionController);
 
 export default sessionRouter;

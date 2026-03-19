@@ -1,3 +1,4 @@
+import { logger } from "../../config/logger";
 import { prisma } from "../../config/prisma";
 import ApiError from "../../utils/ApiError";
 import { SkillsInput, updateUserInput } from "./user.validation";
@@ -6,9 +7,11 @@ import { SkillsInput, updateUserInput } from "./user.validation";
 export const getMe = async(userId:string)=>{
    const user = await prisma.user.findUnique({where:{id:userId}})
     if(!user){
+        logger.warn(`User not found with ID: ${userId}`)
         throw new ApiError(404,"User not found");
     }
     const {password,...withoutPassword} = user;
+    logger.info(`Retrieving user: ${userId}`);
     return withoutPassword;
 }
 
@@ -18,29 +21,35 @@ export const updateMe = async(userId:string,data:updateUserInput)=>{
         data
     });
     const {password,...withoutPassword} = updatedUser;
+    logger.info(`User updated: ${userId}`);
     return withoutPassword;
 }
 
 export const deleteMe = async(userId:string)=>{
     const user  = await prisma.user.findUnique({where:{id:userId}});
     if(!user){
+        logger.warn(`User not found with ID: ${userId}`);
         throw new ApiError(404,"User not found");
     }
     await prisma.user.delete({where:{id:userId}});
+    logger.info(`User deleted: ${userId}`);
     return {message:"User deleted successfully"};
 }
 
 export const getUserById = async(userId:string)=>{
     const user = await prisma.user.findUnique({where:{id:userId}});
     if(!user){
+        logger.warn(`User not found with ID: ${userId}`);
         throw new ApiError(404,"User not found");
     }
     const {password,...withoutPassword} = user;
+    logger.info(`Retrieving user: ${userId}`);
     return withoutPassword;
 }
 
 export const getAllUsers = async()=>{
     const users = await prisma.user.findMany();
+    logger.info(`Retrieving all users`);
     return users.map(user=>{
         const {password,...withoutPassword} = user;
         return withoutPassword;
@@ -56,6 +65,7 @@ export const addSkillsOffered = async(userId:string,data:SkillsInput)=>{
     const createData = data.skills.map(name=>({name,userId}));
     await prisma.skillOffered.createMany({data:createData});
     const updatedSkills = await prisma.skillOffered.findMany({where:{userId}});
+    logger.info(`Skills added for user: ${userId}`);
     return updatedSkills;
 }
 
@@ -67,6 +77,7 @@ export const addSkillsWanted = async(userId:string,data:SkillsInput)=>{
     const createData = data.skills.map(name=>({name,userId}));
     await prisma.skillWanted.createMany({data:createData});
     const updatedSkills = await prisma.skillWanted.findMany({where:{userId}});
+    logger.info(`Skills added for user: ${userId}`);
     return updatedSkills;
 }
 
@@ -84,6 +95,7 @@ export const removeSkillsOffered = async(skillId:string,userId:string)=>{
     if(skill.userId !== userId){
         throw new ApiError(403,"Not authorized");
     }
+    logger.info(`Skill removed for user: ${userId}, skillId: ${skillId}`);
     await prisma.skillOffered.delete({where:{id:skillId}});
 }
 
@@ -98,6 +110,7 @@ export const removeSkillsWanted = async(skillId:string,userId:string)=>{
     if(skill.userId !== userId){
         throw new ApiError(403,"Not authorized");
     }
+    logger.info(`Skill removed for user: ${userId}, skillId: ${skillId}`);
     await prisma.skillWanted.delete({where:{id:skillId}});
 }
 
@@ -117,6 +130,7 @@ export const getMySkills = async(userId:string)=>{
     if(!user){
         throw new ApiError(404,"User not found");
     }
+    logger.info(`Retrieving skills for user: ${userId}`);
     return {
         skillsOffered:user.skillsOffered,
         skillsWanted:user.skillsWanted
