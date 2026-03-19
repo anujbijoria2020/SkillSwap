@@ -1,4 +1,4 @@
 $kind: http-request
-url: ""
+url: "{{baseUrl}}/api/auth/login"
 method: GET
 order: 1773900236966

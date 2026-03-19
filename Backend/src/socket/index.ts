@@ -31,9 +31,6 @@ export const initSocket = (httpServer: HttpServer) => {
   io.on('connection', (socket) => {
 logger.info(`User connected: ${socket.data.userId}, socket id: ${socket.id}`)
 
-  socket.onAny((event, ...args) => {
-    logger.info(`Event received: ${event}`, args)
-  })
     // join a swap room
     socket.on('join_swap', (swapId: string) => {
       socket.join(swapId)
