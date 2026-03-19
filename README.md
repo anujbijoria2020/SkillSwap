@@ -87,6 +87,7 @@ Server runs at http://localhost:5000
 |----------|-------------|
 | DATABASE_URL | PostgreSQL connection string |
 | JWT_SECRET | Secret key for signing JWTs |
-| JWT_EXPIRES_IN | Token expiry e.g. 7d |
+| JWT_ACCESS_TOKEN_EXPIRES_IN | Token expiry e.g. 7d |
+|JWT_REFRESH_TOKEN_EXPIRES_IN | Token expiry e.g. 15d|
 | PORT | Server port |
 | NODE_ENV | development or production |
