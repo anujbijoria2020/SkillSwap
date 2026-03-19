@@ -48,8 +48,6 @@ logger.info(`User connected: ${socket.data.userId}, socket id: ${socket.id}`)
 
     // send message
     socket.on('send_message', async (data: { swapId: string, content: string }) => {
-       logger.info('message received by server:', data) 
-       logger.info(`User ${socket.data.userId} is sending a message to swap ${data.swapId}`)
       try {
         const { swapId, content } = data
         const senderId = socket.data.userId
