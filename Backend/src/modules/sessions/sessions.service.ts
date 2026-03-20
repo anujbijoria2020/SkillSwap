@@ -27,12 +27,10 @@
 // 3. update status to COMPLETED
 // 4. return updated session
 
-// cancelSession(userId, sessionId)
+// deleteSession(userId, sessionId)
 // 1. find session → ApiError(404)
 // 2. check userId === session.userId → ApiError(403)
-// 3. check status === SCHEDULED → ApiError(400, 'Session already completed or cancelled')
-// 4. update status to CANCELLED
-// 5. return updated session
+// 3. delete session
 
 import ApiError from "../../utils/ApiError"
 import { prisma } from "../../config/prisma"
@@ -149,7 +147,7 @@ export const completeSession = async (userId: string, sessionId: string) => {
     return updatedSession
 }
 
-export const cancelSession = async (userId: string, sessionId: string) => {
+export const deleteSession = async (userId: string, sessionId: string) => {
     const session = await prisma.session.findUnique({
         where: { id: sessionId }
     })
@@ -159,15 +157,9 @@ export const cancelSession = async (userId: string, sessionId: string) => {
     if(session.userId !== userId){
         throw new ApiError(403, 'Not authorized')
     }
-    if(session.status !== 'SCHEDULED'){
-        throw new ApiError(400, 'Session already completed or cancelled')
-    }
-    const updatedSession = await prisma.session.update({
-        where: { id: sessionId },
-        data: { status: 'CANCELLED' }
-    })
-    logger.info(`Session cancelled: ${updatedSession.id} for user: ${userId}`);
-    return updatedSession
+    await prisma.session.delete({ where: { id: sessionId } })
+    logger.info(`Session deleted: ${sessionId} for user: ${userId}`)
+    return null
 }
 
 

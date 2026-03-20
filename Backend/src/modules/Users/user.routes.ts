@@ -10,7 +10,7 @@ const userRouter = Router();
 userRouter.get("/me", authMiddleware, getMeController);
 userRouter.put("/me", authMiddleware, validate(updateUserSchema), updateMeController);
 userRouter.delete("/me", authMiddleware, deleteMeController);
-userRouter.get("/allusers", getAllUsersController);
+userRouter.get("/", getAllUsersController);
 
 // skills routes before /:id
 userRouter.post("/skills/offered", authMiddleware, validate(skillsSchema), addSkillsOfferedController);

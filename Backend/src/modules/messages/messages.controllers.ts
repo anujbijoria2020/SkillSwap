@@ -1,13 +1,14 @@
 import { Request, Response,NextFunction } from "express";
 import { deleteMessage, getConversations, getMessages } from "./messages.services";
 
-export const getConversationController = async (req: Request, res: Response, next: NextFunction) => {
+export const getConversationsController = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.user?.userId!
         // Fetch messages for the swap and ensure the user is either sender or receiver
         const swaps = await getConversations(userId);
         res.status(200).json({
             success: true,
+            message: "Conversations fetched successfully",
             data: swaps
         })
     } catch (error) {
@@ -18,11 +19,12 @@ export const getConversationController = async (req: Request, res: Response, nex
 export const getMessagesForSwapController = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.user?.userId!
-        const swapId = req.params.swapid as string
+        const swapId = req.params.swapId as string
         // Fetch messages for the swap and ensure the user is either sender or receiver
         const messages = await getMessages(userId, swapId);
         res.status(200).json({
             success: true,
+            message: "Messages fetched successfully",
             data: messages
         })
     } catch (error) {
@@ -34,12 +36,13 @@ export const getMessagesForSwapController = async (req: Request, res: Response, 
 export const deleteMessageController = async(req:Request,res:Response,next:NextFunction)=>{
     try{
        const userId = req.user?.userId!;
-       const messageId = req.params.messageid as string;
+       const messageId = req.params.id as string;
        // Implement deleteMessage service to remove the message
        await deleteMessage(userId, messageId);
        res.status(200).json({
            success: true,
-           message: "Message deleted"
+           message: "Message deleted successfully",
+           data: null
        })
 
     }catch(error){
