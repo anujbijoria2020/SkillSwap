@@ -12,9 +12,6 @@
     "resolveJsonModule": true,
     "noImplicitAny": false,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "types": ["node"]
   },
   "ts-node": {
