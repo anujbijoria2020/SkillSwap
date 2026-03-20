@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
-import { login, logout, refresh, register } from "./auth.service";
-import { LoginInput, RegisterInput } from "./auth.validation";
+import { login, logout, refresh, register } from './auth.service'
+import { LoginInput, RegisterInput } from './auth.validation'
+import ApiError from '../../utils/ApiError'
 
 // cookie options reused across all controllers
 const cookieOptions = {
@@ -57,7 +58,7 @@ export const refreshController = async(req:Request, res:Response, next:NextFunct
     // read refreshToken from cookie instead of body — browser sends it automatically
     const refreshToken = req.cookies.refreshToken
     if (!refreshToken) {
-      return res.status(401).json({ success: false, message: "Refresh token is required" })
+      throw new ApiError(401, 'Refresh token is required')
     }
 
     const result = await refresh(refreshToken)
@@ -80,7 +81,7 @@ export const logoutController = async(req:Request, res:Response, next:NextFuncti
     // read from cookie
     const refreshToken = req.cookies.refreshToken
     if (!refreshToken) {
-      return res.status(401).json({ success: false, message: "Refresh token is required" })
+      throw new ApiError(401, 'Refresh token is required')
     }
 
     await logout(refreshToken)
@@ -88,7 +89,11 @@ export const logoutController = async(req:Request, res:Response, next:NextFuncti
     // clear the cookie from browser
     res.clearCookie('refreshToken', cookieOptions)
 
-    res.status(200).json({ success: true, message: "Logged out successfully" })
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
+      data: null,
+    })
   } catch (error) {
     next(error)
   }

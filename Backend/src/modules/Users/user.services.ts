@@ -1,7 +1,7 @@
 import { logger } from "../../config/logger";
 import { prisma } from "../../config/prisma";
 import ApiError from "../../utils/ApiError";
-import { SkillsInput, updateUserInput } from "./user.validation";
+import { SkillsInput, UpdateUserInput } from "./user.validation";
 
 
 export const getMe = async(userId:string)=>{
@@ -15,7 +15,13 @@ export const getMe = async(userId:string)=>{
     return withoutPassword;
 }
 
-export const updateMe = async(userId:string,data:updateUserInput)=>{
+export const updateMe = async(userId:string,data:UpdateUserInput)=>{
+    const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+    if(!existingUser){
+        logger.warn(`User not found with ID: ${userId}`);
+        throw new ApiError(404, "User not found");
+    }
+
     const updatedUser = await prisma.user.update({
         where:{id:userId},
         data
@@ -33,7 +39,7 @@ export const deleteMe = async(userId:string)=>{
     }
     await prisma.user.delete({where:{id:userId}});
     logger.info(`User deleted: ${userId}`);
-    return {message:"User deleted successfully"};
+    return null;
 }
 
 export const getUserById = async(userId:string)=>{

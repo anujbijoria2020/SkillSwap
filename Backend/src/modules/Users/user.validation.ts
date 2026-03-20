@@ -15,4 +15,4 @@ export const skillsSchema = z.object({
 })
 
 export type SkillsInput = z.infer<typeof skillsSchema>
-export type updateUserInput = z.infer<typeof updateUserSchema>
+export type UpdateUserInput = z.infer<typeof updateUserSchema>

@@ -29,7 +29,13 @@ app.use(express.urlencoded({ extended: true }))
 app.use(generalLimiter)
 
 
-app.get('/', (_, res) => res.send('SkillSwapNetwork API running'))
+app.get('/', (_, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'SkillSwapNetwork API running',
+    data: null,
+  })
+})
 
 
 

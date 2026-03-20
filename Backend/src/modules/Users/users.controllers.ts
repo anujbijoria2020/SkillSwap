@@ -7,6 +7,7 @@ export const getMeController = async(req:Request,res:Response,next:NextFunction)
     const user = await getMe(userId!);
     res.status(200).json({
         success:true,
+                message: "User fetched successfully",
         data:user
     })
   } catch (error) {
@@ -21,6 +22,7 @@ export const updateMeController = async(req:Request,res:Response,next:NextFuncti
         const updatedUser = await updateMe(userId!,data);
         res.status(200).json({
             success:true,
+            message: "User updated successfully",
             data:updatedUser
         })
     } catch (error) {
@@ -31,10 +33,11 @@ export const updateMeController = async(req:Request,res:Response,next:NextFuncti
 export const deleteMeController = async(req:Request,res:Response,next:NextFunction)=>{
     try{
         const userId = req.user?.userId;
-        const result = await deleteMe(userId!);
+        await deleteMe(userId!);
         res.status(200).json({
             success:true,
-            data:result
+            message: "User deleted successfully",
+            data:null
         })
     } catch (error) {
         next(error)
@@ -47,6 +50,7 @@ export const getUserByIdController = async(req:Request,res:Response,next:NextFun
         const user = await getUserById(userId);
         res.status(200).json({
             success:true,
+            message: "User fetched successfully",
             data:user
         });
     } catch (error) {
@@ -59,6 +63,7 @@ export const getAllUsersController = async(req:Request,res:Response,next:NextFun
         const users = await getAllUsers();
         res.status(200).json({
             success:true,
+            message: "Users fetched successfully",
             data:users
         });
     } catch (error) {
@@ -72,8 +77,9 @@ export const addSkillsOfferedController = async(req:Request,res:Response,next:Ne
         const userId = req.user?.userId;
         const data = req.body;
         const updatedSkills = await addSkillsOffered(userId!,data);
-        res.status(200).json({
+        res.status(201).json({
             success:true,
+            message: "Offered skills added successfully",
             data:updatedSkills
         });
     } catch (error) {
@@ -86,8 +92,9 @@ export const addSkillsWantedController = async(req:Request,res:Response,next:Nex
         const userId = req.user?.userId;
         const data = req.body;
         const updatedSkills = await addSkillsWanted(userId!,data);
-        res.status(200).json({
+        res.status(201).json({
             success:true,
+            message: "Wanted skills added successfully",
             data:updatedSkills
         });
     } catch (error) {
@@ -102,7 +109,8 @@ export const removeSkillsOfferedController = async(req:Request,res:Response,next
         await removeSkillsOffered(skillId,userId!);
         res.status(200).json({
             success:true,
-            message:"Skill removed successfully"
+            message:"Offered skill removed successfully",
+            data:null
         });
     } catch (error) {
         next(error)
@@ -116,7 +124,8 @@ export const removeSkillsWantedController = async(req:Request,res:Response,next:
         await removeSkillsWanted(skillId,userId!);
         res.status(200).json({
             success:true,
-            message:"Skill removed successfully"
+            message:"Wanted skill removed successfully",
+            data:null
         });
     } catch (error) {
         next(error)
@@ -129,6 +138,7 @@ export const getMySkillsController = async(req:Request,res:Response,next:NextFun
         const skills = await getMySkills(userId!);
         res.status(200).json({
             success:true,
+            message: "Skills fetched successfully",
             data:skills
         });
     } catch (error) {

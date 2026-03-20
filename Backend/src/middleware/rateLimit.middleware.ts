@@ -1,11 +1,9 @@
 import rateLimit from 'express-rate-limit';
-import { fa } from 'zod/v4/locales';
 
 export const generalLimiter = rateLimit({
     windowMs:15*60*1000,
     max:100,
     message:{
-        status:'error',
         success:false,
         message:'Too many requests, please try again later.'
     },
@@ -17,7 +15,6 @@ export const authLimiter = rateLimit({
     windowMs:15*60*1000,
     max:10,
     message:{
-        status:'error',
         success:false,
         message:'Too many login attempts, please try again later.'
     },

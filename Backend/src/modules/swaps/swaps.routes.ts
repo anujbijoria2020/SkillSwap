@@ -15,14 +15,14 @@ import {
 const swapRouter = Router()
 
 // specific routes first
-swapRouter.get("/browse", authMiddleware, browseUsersController)
+swapRouter.get("/", authMiddleware, browseUsersController)
 swapRouter.get("/incoming", authMiddleware, getIncomingSwapsController)
 swapRouter.get("/outgoing", authMiddleware, getOutgoingSwapsController)
-swapRouter.post("/createswap", authMiddleware, validate(createSwapSchema), sendSwapRequestController)
+swapRouter.post("/", authMiddleware, validate(createSwapSchema), sendSwapRequestController)
 
 // dynamic routes last
-swapRouter.put("/:swapid/respond", authMiddleware, validate(respondSwapSchema), respondToSwapController)
-swapRouter.get("/:swapid", authMiddleware, getSwapByIdController)
-swapRouter.delete("/:swapid", authMiddleware, cancelSwapController)
+swapRouter.patch("/:id/respond", authMiddleware, validate(respondSwapSchema), respondToSwapController)
+swapRouter.get("/:id", authMiddleware, getSwapByIdController)
+swapRouter.delete("/:id", authMiddleware, cancelSwapController)
 
 export default swapRouter

@@ -7,8 +7,8 @@ import { createReviewSchema } from "./reviews.validation";
 const reviewRouter = Router();
 
 reviewRouter.post("/", authMiddleware, validate(createReviewSchema), createReviewController);
-reviewRouter.get("/user/:userid", authMiddleware, getReviewsForUserController);
-reviewRouter.get("/session/:sessionid", authMiddleware, getReviewsBySessionIdController);
-reviewRouter.get("/:reviewid", authMiddleware, getReviewByIdController);
+reviewRouter.get("/users/:id", authMiddleware, getReviewsForUserController);
+reviewRouter.get("/sessions/:id", authMiddleware, getReviewsBySessionIdController);
+reviewRouter.get("/:id", authMiddleware, getReviewByIdController);
 
 export default reviewRouter;
