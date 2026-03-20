@@ -86,37 +86,38 @@ export const refresh = async (refreshToken: string) => {
   const storedToken = await prisma.refreshToken.findMany({
     where: { userId: payload.userId },
   });
-  let matchedToken = null;
+
   for (const token of storedToken) {
     const isValid = await comparePassword(refreshToken, token.token);
-    if (isValid) {
-      matchedToken = token;
-      break;
+    if (!isValid) continue;
+
+    if (token.expiresAt < new Date()) {
+      throw new ApiError(401, "Refresh token expired");
     }
-  }
-  if (!matchedToken) throw new ApiError(401, "Invalid refresh token");
-  if (matchedToken.expiresAt < new Date())
-    throw new ApiError(401, "Refresh token expired");
-  await prisma.refreshToken.delete({ where: { id: matchedToken.id } });
 
-  const accessToken = generateAccessToken({
-    userId: payload.userId,
-    email: payload.email,
-  });
-  const newRefreshToken = generateRefreshToken({
-    userId: payload.userId,
-    email: payload.email,
-  });
+    await prisma.refreshToken.delete({ where: { id: token.id } });
 
-  const hashedRefreshToken = await hashPassword(newRefreshToken);
-  await prisma.refreshToken.create({
-    data: {
-      token: hashedRefreshToken,
+    const accessToken = generateAccessToken({
       userId: payload.userId,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
-  });
-  return { accessToken, refreshToken: newRefreshToken };
+      email: payload.email,
+    });
+    const newRefreshToken = generateRefreshToken({
+      userId: payload.userId,
+      email: payload.email,
+    });
+
+    const hashedRefreshToken = await hashPassword(newRefreshToken);
+    await prisma.refreshToken.create({
+      data: {
+        token: hashedRefreshToken,
+        userId: payload.userId,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+    return { accessToken, refreshToken: newRefreshToken };
+  }
+
+  throw new ApiError(401, "Invalid refresh token");
 };
 
 export const logout = async (refreshToken: string) => {
