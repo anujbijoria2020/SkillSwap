@@ -5,6 +5,7 @@ import { Server as HttpServer } from 'http'
 import { verifyAccessToken } from '../utils/jwt'
 import { prisma } from '../config/prisma'
 import { logger } from '../config/logger'
+import { createNotification } from 'src/modules/notifications/notification.services'
 
 export const initSocket = (httpServer: HttpServer) => {
  const io = new Server(httpServer, {
@@ -70,6 +71,17 @@ logger.info(`User connected: ${socket.data.userId}, socket id: ${socket.id}`)
             sender: { select: { id: true, name: true, avatarUrl: true } }
           }
         })
+
+        // notify receiver
+const sender = await prisma.user.findUnique({ where: { id: senderId } })
+
+await createNotification(
+  receiverId,
+  senderId,
+  'new_message',
+  `${sender?.name} sent you a message`,
+  '/messages'
+)
 
         // emit to everyone in the swap room including sender
         io.to(swapId).emit('new_message', {

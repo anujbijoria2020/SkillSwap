@@ -1,6 +1,7 @@
 import { logger } from "../../config/logger"
 import { prisma } from "../../config/prisma"
 import ApiError from "../../utils/ApiError"
+import { createNotification } from "../notifications/notification.services"
 import { CreateSwapInput } from "./swap.validation"
 
 const mapUserProfile = (user: {
@@ -148,7 +149,17 @@ export const sendSwapRequest = async (initiatorId: string, data: CreateSwapInput
 
   const swap = await prisma.swap.create({
     data: { initiatorId, receiverId, skillOffered, skillWanted }
-  })
+  });
+  const intiator = await prisma.user.findUnique({ where: { id: initiatorId } });
+
+    await createNotification(
+      receiverId,
+      initiatorId,
+      "swap_request",
+      `${intiator?.name} has sent you a swap request!`,
+      `/swaps/${swap.id}`
+    );
+    
   logger.info(`Swap request created: ${swap.id} from user ${initiatorId} to user ${receiverId}`);
 
   return swap
@@ -164,6 +175,17 @@ export const respondToSwap = async (userId: string, swapId: string, accept: bool
     where: { id: swapId },
     data: { status: accept ? "ACCEPTED" : "REJECTED" }
   })
+// only notify on accept
+if (accept) {
+  const receiver = await prisma.user.findUnique({ where: { id: userId } })
+  await createNotification(
+    swap.initiatorId,
+    userId,
+    'swap_accepted',
+    `${receiver?.name} accepted your swap request`,
+    '/swaps'
+  )
+}
   logger.info(`Swap ${accept ? "accepted" : "rejected"}: ${swapId} by user ${userId}`);
 
   return updated

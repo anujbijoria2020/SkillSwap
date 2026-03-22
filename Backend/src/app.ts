@@ -15,6 +15,8 @@ import { errorMiddleware } from './middleware/error.middleware'
 import cookieParser from 'cookie-parser'
 import { authLimiter, generalLimiter } from './middleware/rateLimit.middleware'
 import { logger } from './config/logger'
+import notificationRouter from './modules/notifications/notification.routes'
+import settingsRouter from './modules/settings/settings.routes'
 
 const app = express()
 const httpServer = createServer(app)  // wrap express in http server
@@ -50,6 +52,8 @@ app.use('/api/sessions', sessionRouter)
 app.use('/api/reviews', reviewRouter)
 app.use('/api/messages', messageRouter)
 app.use('/api/conversations', conversationRouter)
+app.use('/api/notifications', notificationRouter)
+app.use('/api/settings', settingsRouter);
 app.use(errorMiddleware)
 
 // use httpServer instead of app.listen

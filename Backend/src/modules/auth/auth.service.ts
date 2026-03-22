@@ -45,6 +45,11 @@ export const register = async (input: RegisterInput) => {
     },
   });
 
+  // create default settings for new user
+await prisma.userSettings.create({
+  data: { userId: user.id }
+})
+
   return { user: userWithoutPassword, accessToken, refreshToken };
 };
 

@@ -41,6 +41,9 @@ receivedSwaps  Swap[] @relation("Receiver")
   reviewsGiven    Review[]       @relation("Reviewer")
   reviewsReceived Review[]       @relation("Reviewee")
   refreshTokens RefreshToken[]
+  notifications Notification[]
+  notificationsTriggered Notification[] @relation("NotificationActor")
+  settings UserSettings?
 }
 
 model SkillOffered {
@@ -121,4 +124,49 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+}
+
+// Notification model:
+// - id, userId, type, message, link, read, actorId, createdAt
+// - relation to User (userId)
+// - relation to User (actorId) — who triggered it
+
+// UserSettings model:
+// - id, userId (unique)
+// - discovery, dmsFromAnyone, showPoints (boolean defaults true)
+// - notifSwaps, notifMessages, notifReviews (boolean defaults true)
+// - relation to User
+
+// Add relations on User model:
+// - notifications Notification[]
+// - notificationsTriggered Notification[] @relation("NotificationActor")
+// - settings UserSettings?
+
+
+model Notification{
+  id String @id @default(uuid())
+  userId String
+  type String
+  message String
+  link String?
+  read Boolean @default(false)
+  actorId String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+}
+
+model UserSettings{
+  id String @id @default(uuid())
+  userId String @unique
+  discovery Boolean @default(true)
+  dmsFromAnyone Boolean @default(true)
+  showPoints Boolean @default(true)
+  notifSwaps Boolean @default(true)
+  notifMessages Boolean @default(true)
+  notifReviews Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
 }
