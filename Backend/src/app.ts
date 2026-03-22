@@ -10,6 +10,7 @@ import swapRouter from './modules/swaps/swaps.routes'
 import sessionRouter from './modules/sessions/sessions.routes'
 import reviewRouter from './modules/reviews/reviews.routes'
 import messageRouter from './modules/messages/messages.routes'
+import conversationRouter from './modules/messages/conversations.routes'
 import { errorMiddleware } from './middleware/error.middleware'
 import cookieParser from 'cookie-parser'
 import { authLimiter, generalLimiter } from './middleware/rateLimit.middleware'
@@ -48,6 +49,7 @@ app.use('/api/swaps', swapRouter)
 app.use('/api/sessions', sessionRouter)
 app.use('/api/reviews', reviewRouter)
 app.use('/api/messages', messageRouter)
+app.use('/api/conversations', conversationRouter)
 app.use(errorMiddleware)
 
 // use httpServer instead of app.listen
