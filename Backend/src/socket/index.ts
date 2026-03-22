@@ -5,7 +5,7 @@ import { Server as HttpServer } from 'http'
 import { verifyAccessToken } from '../utils/jwt'
 import { prisma } from '../config/prisma'
 import { logger } from '../config/logger'
-import { createNotification } from 'src/modules/notifications/notification.services'
+import { createNotification } from '../modules/notifications/notification.services'
 
 export const initSocket = (httpServer: HttpServer) => {
  const io = new Server(httpServer, {
