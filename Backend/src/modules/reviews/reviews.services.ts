@@ -24,6 +24,7 @@ import ApiError from "../../utils/ApiError";
 import { CreateReviewInput } from "./reviews.validation";
 import { prisma } from "../../config/prisma";
 import { createNotification } from "../notifications/notification.services";
+import { logger } from "../../config/logger";
 
 export const createReview = async(reviewerId:string,data:CreateReviewInput)=>{
     const {sessionId,revieweeId,rating,comment} = data;
@@ -64,16 +65,23 @@ export const createReview = async(reviewerId:string,data:CreateReviewInput)=>{
             comment
         }
     })
-   // get reviewer name
-const reviewer = await prisma.user.findUnique({ where: { id: reviewerId } })
+    try {
+        const reviewer = await prisma.user.findUnique({ where: { id: reviewerId } })
 
-await createNotification(
-  revieweeId,
-  reviewerId,
-  'new_review',
-  `${reviewer?.name} left you a review`,
-  '/me'
-)
+        await createNotification(
+            revieweeId,
+            reviewerId,
+            'new_review',
+            `${reviewer?.name} left you a review`,
+            '/me'
+        )
+    } catch (error) {
+        logger.error('Failed to create review notification', {
+            reviewerId,
+            revieweeId,
+            error
+        })
+    }
     return review;
 }
 

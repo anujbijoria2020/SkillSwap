@@ -72,16 +72,24 @@ logger.info(`User connected: ${socket.data.userId}, socket id: ${socket.id}`)
           }
         })
 
-        // notify receiver
-const sender = await prisma.user.findUnique({ where: { id: senderId } })
+        // notify receiver (non-fatal side-effect)
+        try {
+          const sender = await prisma.user.findUnique({ where: { id: senderId } })
 
-await createNotification(
-  receiverId,
-  senderId,
-  'new_message',
-  `${sender?.name} sent you a message`,
-  '/messages'
-)
+          await createNotification(
+            receiverId,
+            senderId,
+            'new_message',
+            `${sender?.name} sent you a message`,
+            '/messages'
+          )
+        } catch (notificationError) {
+          logger.error('Failed to create message notification', {
+            senderId,
+            receiverId,
+            notificationError
+          })
+        }
 
         // emit to everyone in the swap room including sender
         io.to(swapId).emit('new_message', {

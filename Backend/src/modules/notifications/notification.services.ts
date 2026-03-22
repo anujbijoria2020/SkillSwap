@@ -9,6 +9,28 @@ export const createNotification = async (
   message: string,      // human readable message
   link: string          // frontend route e.g. '/swaps'
 ) => {
+  const settings = await prisma.userSettings.findUnique({
+    where: { userId }
+  })
+
+  const shouldCreate = (() => {
+    if (!settings) return true
+
+    switch (type) {
+      case 'swap_request':
+      case 'swap_accepted':
+        return settings.notifSwaps
+      case 'new_message':
+        return settings.notifMessages
+      case 'new_review':
+        return settings.notifReviews
+      default:
+        return true
+    }
+  })()
+
+  if (!shouldCreate) return null
+
   return prisma.notification.create({
     data: { userId, actorId, type, message, link }
   })
@@ -27,16 +49,13 @@ export const getNotifications = async (userId: string) => {
 }
 
 export const markAsRead = async (userId: string, notificationId: string) => {
-  const notification = await prisma.notification.findUnique({
-    where: { id: notificationId }
-  })
-  if (!notification) throw new ApiError(404, 'Notification not found')
-  if (notification.userId !== userId) throw new ApiError(403, 'Not authorized')
-
-  return prisma.notification.update({
-    where: { id: notificationId },
+  const result = await prisma.notification.updateMany({
+    where: { id: notificationId, userId },
     data: { read: true }
   })
+
+  if (result.count === 0) throw new ApiError(404, 'Notification not found')
+  return null
 }
 
 export const markAllAsRead = async (userId: string) => {
@@ -54,12 +73,10 @@ export const getUnreadCount = async (userId: string) => {
 }
 
 export const deleteNotification = async (userId: string, notificationId: string) => {
-  const notification = await prisma.notification.findUnique({
-    where: { id: notificationId }
+  const result = await prisma.notification.deleteMany({
+    where: { id: notificationId, userId }
   })
-  if (!notification) throw new ApiError(404, 'Notification not found')
-  if (notification.userId !== userId) throw new ApiError(403, 'Not authorized')
 
-  await prisma.notification.delete({ where: { id: notificationId } })
+  if (result.count === 0) throw new ApiError(404, 'Notification not found')
   return null
 }

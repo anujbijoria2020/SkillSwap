@@ -21,6 +21,9 @@ export const register = async (input: RegisterInput) => {
       name,
       email,
       password: hashedPassword,
+      settings: {
+        create: {},
+      },
     },
   });
 
@@ -44,11 +47,6 @@ export const register = async (input: RegisterInput) => {
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     },
   });
-
-  // create default settings for new user
-await prisma.userSettings.create({
-  data: { userId: user.id }
-})
 
   return { user: userWithoutPassword, accessToken, refreshToken };
 };

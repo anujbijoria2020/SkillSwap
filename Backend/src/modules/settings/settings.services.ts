@@ -2,17 +2,11 @@ import { prisma } from '../../config/prisma'
 import { UpdateSettingsInput } from './settings.validation'
 
 export const getSettings = async (userId: string) => {
-  const settings = await prisma.userSettings.findUnique({
-    where: { userId }
+  return prisma.userSettings.upsert({
+    where: { userId },
+    create: { userId },
+    update: {}
   })
-
-  if (!settings) {
-    return prisma.userSettings.create({
-      data: { userId }
-    })
-  }
-
-  return settings
 }
 
 export const updateSettings = async (userId: string, data: UpdateSettingsInput) => {

@@ -152,13 +152,23 @@ export const sendSwapRequest = async (initiatorId: string, data: CreateSwapInput
   });
   const intiator = await prisma.user.findUnique({ where: { id: initiatorId } });
 
+  try {
     await createNotification(
       receiverId,
       initiatorId,
       "swap_request",
       `${intiator?.name} has sent you a swap request!`,
       `/swaps/${swap.id}`
-    );
+    )
+  } catch (error) {
+    logger.error("Failed to create swap notification", {
+      notificationType: "swap_request",
+      swapId: swap.id,
+      receiverId,
+      initiatorId,
+      error,
+    })
+  }
     
   logger.info(`Swap request created: ${swap.id} from user ${initiatorId} to user ${receiverId}`);
 
@@ -178,13 +188,23 @@ export const respondToSwap = async (userId: string, swapId: string, accept: bool
 // only notify on accept
 if (accept) {
   const receiver = await prisma.user.findUnique({ where: { id: userId } })
-  await createNotification(
-    swap.initiatorId,
-    userId,
-    'swap_accepted',
-    `${receiver?.name} accepted your swap request`,
-    '/swaps'
-  )
+  try {
+    await createNotification(
+      swap.initiatorId,
+      userId,
+      'swap_accepted',
+      `${receiver?.name} accepted your swap request`,
+      '/swaps'
+    )
+  } catch (error) {
+    logger.error("Failed to create swap notification", {
+      notificationType: "swap_accepted",
+      swapId: swap.id,
+      receiverId: swap.initiatorId,
+      initiatorId: userId,
+      error,
+    })
+  }
 }
   logger.info(`Swap ${accept ? "accepted" : "rejected"}: ${swapId} by user ${userId}`);
 
