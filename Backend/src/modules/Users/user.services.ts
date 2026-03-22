@@ -3,16 +3,27 @@ import { prisma } from "../../config/prisma";
 import ApiError from "../../utils/ApiError";
 import { SkillsInput, UpdateUserInput } from "./user.validation";
 
+// Helper function to transform user data with skills as flat arrays
+const transformUserWithSkills = (user: any) => {
+    const { password, ...withoutPassword } = user;
+    return {
+        ...withoutPassword,
+        skillsOffering: user.skillsOffered?.map((s: any) => s.name) || [],
+        skillsWanted: user.skillsWanted?.map((s: any) => s.name) || [],
+    };
+};
 
 export const getMe = async(userId:string)=>{
-   const user = await prisma.user.findUnique({where:{id:userId}})
+   const user = await prisma.user.findUnique({
+       where:{id:userId},
+       include: { skillsOffered: true, skillsWanted: true }
+   })
     if(!user){
         logger.warn(`User not found with ID: ${userId}`)
         throw new ApiError(404,"User not found");
     }
-    const {password,...withoutPassword} = user;
     logger.info(`Retrieving user: ${userId}`);
-    return withoutPassword;
+    return transformUserWithSkills(user);
 }
 
 export const updateMe = async(userId:string,data:UpdateUserInput)=>{
@@ -22,13 +33,54 @@ export const updateMe = async(userId:string,data:UpdateUserInput)=>{
         throw new ApiError(404, "User not found");
     }
 
+    // Separate skills from user data
+    const { skillsOffering, skillsWanted, ...userUpdateData } = data;
+
+    // Update user record
     const updatedUser = await prisma.user.update({
         where:{id:userId},
-        data
+        data: userUpdateData,
+        include: { skillsOffered: true, skillsWanted: true }
     });
-    const {password,...withoutPassword} = updatedUser;
+
+    // Handle skills offered if provided
+    if (skillsOffering !== undefined) {
+        await prisma.skillOffered.deleteMany({ where: { userId } });
+        if (skillsOffering.length > 0) {
+            const skillsToCreate = skillsOffering.map(name => ({ name, userId }));
+            await prisma.skillOffered.createMany({ data: skillsToCreate });
+        }
+        // Refresh the user data with updated skills
+        const refreshedUser = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { skillsOffered: true, skillsWanted: true }
+        });
+        if (refreshedUser) {
+            logger.info(`User updated: ${userId}`);
+            return transformUserWithSkills(refreshedUser);
+        }
+    }
+
+    // Handle skills wanted if provided
+    if (skillsWanted !== undefined) {
+        await prisma.skillWanted.deleteMany({ where: { userId } });
+        if (skillsWanted.length > 0) {
+            const skillsToCreate = skillsWanted.map(name => ({ name, userId }));
+            await prisma.skillWanted.createMany({ data: skillsToCreate });
+        }
+        // Refresh the user data with updated skills
+        const refreshedUser = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { skillsOffered: true, skillsWanted: true }
+        });
+        if (refreshedUser) {
+            logger.info(`User updated: ${userId}`);
+            return transformUserWithSkills(refreshedUser);
+        }
+    }
+
     logger.info(`User updated: ${userId}`);
-    return withoutPassword;
+    return transformUserWithSkills(updatedUser);
 }
 
 export const deleteMe = async(userId:string)=>{
@@ -43,23 +95,24 @@ export const deleteMe = async(userId:string)=>{
 }
 
 export const getUserById = async(userId:string)=>{
-    const user = await prisma.user.findUnique({where:{id:userId}});
+    const user = await prisma.user.findUnique({
+        where:{id:userId},
+        include: { skillsOffered: true, skillsWanted: true }
+    });
     if(!user){
         logger.warn(`User not found with ID: ${userId}`);
         throw new ApiError(404,"User not found");
     }
-    const {password,...withoutPassword} = user;
     logger.info(`Retrieving user: ${userId}`);
-    return withoutPassword;
+    return transformUserWithSkills(user);
 }
 
 export const getAllUsers = async()=>{
-    const users = await prisma.user.findMany();
-    logger.info(`Retrieving all users`);
-    return users.map(user=>{
-        const {password,...withoutPassword} = user;
-        return withoutPassword;
+    const users = await prisma.user.findMany({
+        include: { skillsOffered: true, skillsWanted: true }
     });
+    logger.info(`Retrieving all users`);
+    return users.map(user => transformUserWithSkills(user));
 }
 
 

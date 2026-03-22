@@ -31,6 +31,11 @@ export const initSocket = (httpServer: HttpServer) => {
   io.on('connection', (socket) => {
 logger.info(`User connected: ${socket.data.userId}, socket id: ${socket.id}`)
 
+    socket.on('join', (data: { userId: string }) => {
+      socket.emit('joined', { userId: data.userId })
+      logger.info(`User ${socket.data.userId} joined global room`)
+    })
+
     // join a swap room
     socket.on('join_swap', (swapId: string) => {
       socket.join(swapId)
@@ -44,10 +49,13 @@ logger.info(`User connected: ${socket.data.userId}, socket id: ${socket.id}`)
     })
 
     // send message
-    socket.on('send_message', async (data: { swapId: string, content: string }) => {
+    socket.on('send_message', async (data: { swapId?: string, conversationId?: string, content: string }) => {
       try {
-        const { swapId, content } = data
+        const swapId = data.swapId || data.conversationId
+        const { content } = data
         const senderId = socket.data.userId
+
+        if (!swapId) return
 
         // save to DB
         const swap = await prisma.swap.findUnique({ where: { id: swapId } })
@@ -64,7 +72,11 @@ logger.info(`User connected: ${socket.data.userId}, socket id: ${socket.id}`)
         })
 
         // emit to everyone in the swap room including sender
-        io.to(swapId).emit('new_message', message)
+        io.to(swapId).emit('new_message', {
+          ...message,
+          conversationId: message.swapId,
+          read: false
+        })
          logger.info(`message emitted by server to swapId ${swapId}:`, message)
       } catch (error) {
         socket.emit('error', { message: 'Failed to send message' })

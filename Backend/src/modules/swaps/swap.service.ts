@@ -1,48 +1,71 @@
-// browseUsers(userId: string)
-// → find all users except self
-// → include skillsOffered and skillsWanted
-// → exclude users who already have a PENDING or ACCEPTED swap with current user
-// → return users without passwords
-
-// sendSwapRequest(initiatorId: string, data: CreateSwapInput)
-// data = { receiverId, skillOffered, skillWanted }
-// 1. check receiver exists → ApiError(404, 'User not found')
-// 2. check not sending to self → ApiError(400, 'Cannot send swap request to yourself')
-// 3. check no existing PENDING swap between these two users → ApiError(409, 'Swap request already exists')
-// 4. prisma.swap.create with status PENDING
-// 5. return swap
-
-// respondToSwap(userId: string, swapId: string, accept: boolean)
-// 1. find swap by id → ApiError(404, 'Swap not found')
-// 2. check userId === swap.receiverId → ApiError(403, 'Not authorized')
-// 3. check swap.status === PENDING → ApiError(400, 'Swap is not pending')
-// 4. update status to ACCEPTED or REJECTED based on accept boolean
-// 5. return updated swap
-
-// getIncomingSwaps(userId: string)
-// → prisma.swap.findMany where receiverId === userId
-// → include initiator with skills
-
-// getOutgoingSwaps(userId: string)
-// → prisma.swap.findMany where initiatorId === userId
-// → include receiver with skills
-
-// getSwapById(userId: string, swapId: string)
-// 1. find swap by id → ApiError(404, 'Swap not found')
-// 2. check userId === swap.initiatorId OR swap.receiverId → ApiError(403, 'Not authorized')
-// 3. return swap with both users and their skills
-
-// cancelSwap(userId: string, swapId: string)
-// 1. find swap → ApiError(404)
-// 2. check userId === swap.initiatorId → ApiError(403, 'Not authorized')
-// 3. check status === PENDING → ApiError(400, 'Can only cancel pending swaps')
-// 4. update status to CANCELLED
-// 5. return updated swap
-
 import { logger } from "../../config/logger"
 import { prisma } from "../../config/prisma"
 import ApiError from "../../utils/ApiError"
 import { CreateSwapInput } from "./swap.validation"
+
+const mapUserProfile = (user: {
+  id: string
+  name: string
+  email: string
+  bio: string | null
+  avatarUrl: string | null
+  location: string | null
+  availability: string[]
+  skillsOffered: { name: string }[]
+  skillsWanted: { name: string }[]
+}) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  bio: user.bio,
+  avatar: user.avatarUrl,
+  location: user.location,
+  availability: user.availability,
+  skillsOffering: user.skillsOffered.map((s) => s.name),
+  skillsWanted: user.skillsWanted.map((s) => s.name),
+})
+
+const mapSwapRequest = (swap: {
+  id: string
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED"
+  skillOffered: string
+  skillWanted: string
+  createdAt: Date
+  initiator: {
+    id: string
+    name: string
+    avatarUrl: string | null
+    skillsOffered: { name: string }[]
+    skillsWanted: { name: string }[]
+  }
+  receiver: {
+    id: string
+    name: string
+    avatarUrl: string | null
+    skillsOffered: { name: string }[]
+    skillsWanted: { name: string }[]
+  }
+}) => ({
+  id: swap.id,
+  status: swap.status.toLowerCase(),
+  fromUser: {
+    id: swap.initiator.id,
+    name: swap.initiator.name,
+    avatar: swap.initiator.avatarUrl,
+    skillsOffering: swap.initiator.skillsOffered.map((s) => s.name),
+    skillsWanted: swap.initiator.skillsWanted.map((s) => s.name),
+  },
+  toUser: {
+    id: swap.receiver.id,
+    name: swap.receiver.name,
+    avatar: swap.receiver.avatarUrl,
+    skillsOffering: swap.receiver.skillsOffered.map((s) => s.name),
+    skillsWanted: swap.receiver.skillsWanted.map((s) => s.name),
+  },
+  offeredSkill: swap.skillOffered,
+  wantedSkill: swap.skillWanted,
+  createdAt: swap.createdAt,
+})
 
 export const browseUsers = async (userId: string) => {
   const users = await prisma.user.findMany({
@@ -68,17 +91,21 @@ export const browseUsers = async (userId: string) => {
       ]
     },
     include: {
-      skillsOffered: true,
-      skillsWanted: true
+      skillsOffered: { select: { name: true } },
+      skillsWanted: { select: { name: true } }
     }
   })
   logger.info(`User ${userId} browsed users, found ${users.length} results`);
 
-  return users.map(({ password, ...rest }) => rest)
+  return users.map(mapUserProfile)
 }
 
 export const sendSwapRequest = async (initiatorId: string, data: CreateSwapInput) => {
-  const { receiverId } = data
+  const receiverId = data.receiverId || data.toUserId
+
+  if (!receiverId) {
+    throw new ApiError(400, "receiverId or toUserId is required")
+  }
 
   if (initiatorId === receiverId) {
     throw new ApiError(400, "Cannot send swap request to yourself")
@@ -143,45 +170,59 @@ export const respondToSwap = async (userId: string, swapId: string, accept: bool
 }
 
 export const getIncomingSwaps = async (userId: string) => {
-  return prisma.swap.findMany({
+  const swaps = await prisma.swap.findMany({
     where: { receiverId: userId },
     include: {
       initiator: {
         select: {
           id: true,
           name: true,
-          email: true,
-          bio: true,
           avatarUrl: true,
-          createdAt: true,
-          updatedAt: true,
-          skillsOffered: true,
-          skillsWanted: true
+          skillsOffered: { select: { name: true } },
+          skillsWanted: { select: { name: true } }
         }
-      }
-    }
-  })
-}
-
-export const getOutgoingSwaps = async (userId: string) => {
-  return prisma.swap.findMany({
-    where: { initiatorId: userId },
-    include: {
+      },
       receiver: {
         select: {
           id: true,
           name: true,
-          email: true,
-          bio: true,
           avatarUrl: true,
-          createdAt: true,
-          updatedAt: true,
-          skillsOffered: true,
-          skillsWanted: true
+          skillsOffered: { select: { name: true } },
+          skillsWanted: { select: { name: true } }
         }
       }
     }
   })
+
+  return swaps.map(mapSwapRequest)
+}
+
+export const getOutgoingSwaps = async (userId: string) => {
+  const swaps = await prisma.swap.findMany({
+    where: { initiatorId: userId },
+    include: {
+      initiator: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          skillsOffered: { select: { name: true } },
+          skillsWanted: { select: { name: true } }
+        }
+      },
+      receiver: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          skillsOffered: { select: { name: true } },
+          skillsWanted: { select: { name: true } }
+        }
+      }
+    }
+  })
+
+  return swaps.map(mapSwapRequest)
 }
 
 export const getSwapById = async (userId: string, swapId: string) => {

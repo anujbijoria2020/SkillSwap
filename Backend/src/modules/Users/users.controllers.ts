@@ -1,5 +1,6 @@
 import { NextFunction,Request,Response } from "express"
 import { addSkillsOffered, addSkillsWanted, deleteMe, getAllUsers, getMe, getMySkills, getUserById, removeSkillsOffered, removeSkillsWanted, updateMe } from "./user.services"
+import { getReviewsForUser } from "../reviews/reviews.services"
 
 export const getMeController = async(req:Request,res:Response,next:NextFunction)=>{
   try{
@@ -140,6 +141,34 @@ export const getMySkillsController = async(req:Request,res:Response,next:NextFun
             success:true,
             message: "Skills fetched successfully",
             data:skills
+        });
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const getMyReviewsController = async(req:Request,res:Response,next:NextFunction)=>{
+    try{
+        const userId = req.user?.userId;
+        const reviews = await getReviewsForUser(userId!);
+        res.status(200).json({
+            success:true,
+            message: "Reviews fetched successfully",
+            data:reviews
+        });
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const getUserReviewsController = async(req:Request,res:Response,next:NextFunction)=>{
+    try{
+        const userId = req.params.id as string;
+        const reviews = await getReviewsForUser(userId);
+        res.status(200).json({
+            success:true,
+            message: "Reviews fetched successfully",
+            data:reviews
         });
     } catch (error) {
         next(error)
