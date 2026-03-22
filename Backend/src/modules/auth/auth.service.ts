@@ -21,6 +21,9 @@ export const register = async (input: RegisterInput) => {
       name,
       email,
       password: hashedPassword,
+      settings: {
+        create: {},
+      },
     },
   });
 
